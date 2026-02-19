@@ -90,16 +90,13 @@ def ui():
     # Serve a single-file HTML page with:
     # - Falkor-ish theme
     # - Inline “dragon” SVG
-    # - Network visualization using vis-network
+  # - Simple JSON output (no visualization)
     html = f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>falkordemo • Network</title>
-
-  <!-- vis-network (graph visualization) -->
-  <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
 
   <style>
     :root {{
@@ -211,12 +208,21 @@ def ui():
       background: rgba(56,242,185,.14);
     }}
 
-    #net {{
-      height: 560px;
-      width: 100%;
-      background: radial-gradient(700px 350px at 20% 20%, rgba(56,242,185,.10), transparent 55%),
-                  radial-gradient(700px 350px at 80% 35%, rgba(45,212,255,.08), transparent 55%),
-                  rgba(0,0,0,.15);
+    pre {{
+      margin: 0;
+      padding: 16px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+    }}
+
+    .hint {{
+      padding: 12px 16px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      color: var(--muted);
+      font-size: 12px;
     }}
 
     .footer {{
@@ -257,7 +263,6 @@ def ui():
 
       <div class="btns">
         <button id="reloadBtn">Reload</button>
-        <button id="reseedBtn">Reseed demo graph</button>
       </div>
     </div>
 
@@ -266,85 +271,23 @@ def ui():
         <div class="chip"><span class="dot"></span> Connected to <span id="connText">{FALKOR_HOST}:{FALKOR_PORT}</span></div>
         <div class="chip">Graph: <strong style="color: var(--text); font-weight: 700;">{GRAPH_NAME}</strong></div>
       </div>
-      <div id="net"></div>
-    </div>
-
-    <div class="footer">
-      Tip: drag nodes around, scroll to zoom, click nodes to highlight.
+      <pre id="out">Loading…</pre>
+      <div class="hint">Shows the nodes returned by <code>/api/graph</code> as JSON.</div>
     </div>
   </div>
 
 <script>
-  const netEl = document.getElementById("net");
-  let network = null;
+  const outEl = document.getElementById("out");
 
-  function buildNetwork(nodes, edges) {{
-    const data = {{
-      nodes: new vis.DataSet(nodes.map(n => ({{
-        ...n,
-        shape: "dot",
-        size: 18,
-        font: {{ color: "{TEXT}", size: 14 }},
-        color: {{
-          background: "{ACCENT}",
-          border: "{ACCENT2}",
-          highlight: {{ background: "{ACCENT2}", border: "{ACCENT}" }}
-        }}
-      }}))),
-      edges: new vis.DataSet(edges.map(e => ({{
-        ...e,
-        arrows: "to",
-        font: {{ color: "{MUTED}", size: 12, align: "middle" }},
-        color: {{ color: "rgba(231,238,248,0.35)", highlight: "{ACCENT}" }},
-        smooth: {{ type: "dynamic" }}
-      }})))
-    }};
-
-    const options = {{
-      physics: {{
-        enabled: true,
-        stabilization: true,
-        solver: "forceAtlas2Based",
-        forceAtlas2Based: {{
-          gravitationalConstant: -60,
-          centralGravity: 0.01,
-          springLength: 140,
-          springConstant: 0.08
-        }},
-      }},
-      interaction: {{
-        hover: true,
-        tooltipDelay: 80
-      }},
-      nodes: {{
-        borderWidth: 2
-      }}
-    }};
-
-    if (network) {{
-      network.setData(data);
-      network.stabilize(150);
-      return;
-    }}
-
-    network = new vis.Network(netEl, data, options);
-  }}
-
-  async function loadGraph() {{
+  async function loadNodes() {{
+    outEl.textContent = "Loading…";
     const res = await fetch("/api/graph");
     const payload = await res.json();
-    buildNetwork(payload.nodes, payload.edges);
+    outEl.textContent = JSON.stringify(payload.nodes, null, 2);
   }}
 
-  async function reseed() {{
-    await fetch("/api/reseed", {{ method: "POST" }});
-    await loadGraph();
-  }}
-
-  document.getElementById("reloadBtn").addEventListener("click", loadGraph);
-  document.getElementById("reseedBtn").addEventListener("click", reseed);
-
-  loadGraph();
+  document.getElementById("reloadBtn").addEventListener("click", loadNodes);
+  loadNodes();
 </script>
 
 </body>

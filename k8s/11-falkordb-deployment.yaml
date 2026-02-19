@@ -16,7 +16,14 @@ spec:
       containers:
         - name: falkordb
           image: falkordb/falkordb:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           ports:
             - name: redis
               containerPort: 6379
