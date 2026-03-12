@@ -34,3 +34,6 @@ instance/
 
 # Docker
 **/.env
+
+# Local loader config (may contain credentials)
+scripts/config/falkordb_loader_config.json

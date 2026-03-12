@@ -1,6 +1,6 @@
 # falkordemo
 
-Small demo showing **Flask** talking to **FalkorDB** (RedisGraph commands) and rendering a simple network visualization in the browser.
+A small demo showing **Flask** talking to **FalkorDB** (RedisGraph commands) and rendering a simple network visualization in the browser.
 
 ## What’s inside
 
@@ -52,6 +52,14 @@ Open the UI:
 
 ### 1) Apply manifests
 
+Using the helper script:
+
+```bash
+./start.sh
+```
+
+Or manually:
+
 ```bash
 kubectl apply -f k8s/00-namespace.yaml
 kubectl apply -f k8s/10-falkordb-pvc.yaml
@@ -61,7 +69,33 @@ kubectl apply -f k8s/21-flask-deployment.yaml
 kubectl apply -f k8s/22-flask-service.yaml
 ```
 
+Update (re-apply manifests + restart the Flask deployment):
+
+```bash
+./update.sh
+```
+
+To roll out a specific Flask image:
+
+```bash
+IMAGE=<your-registry>/falkordemo-flask:0.1 ./update.sh
+```
+
+Stop (deletes resources, including the PVC + namespace):
+
+```bash
+./stop.sh
+```
+
 ### 2) Port-forward the Flask service
+
+Or port-forward both the Flask app and FalkorDB Browser with one command:
+
+```bash
+./expose-local.sh
+```
+
+This also forwards FalkorDB Redis to `localhost:6379` (for `redis-cli` / external apps).
 
 ```bash
 kubectl -n guyl port-forward svc/flask-app 8080:8080
@@ -102,3 +136,16 @@ Environment variables (Flask container):
 - `FALKOR_HOST` (default: `falkordb`)
 - `FALKOR_PORT` (default: `6379`)
 - `GRAPH_NAME` (default: `demo`)
+
+## CSV loader (folder of CSVs)
+
+The folder CSV loader script is: `app/falkordb_csv_loader.py`.
+
+Example:
+
+  ./.venv/bin/python app/falkordb_csv_loader.py /path/to/csv_folder -g demo -h localhost -p 6379 -u USERNAME -a PASSWORD -b 1000
+
+Notes:
+
+- Help is `--help` (we use `-h` for host).
+- `-P` is a hidden legacy alias for password (kept for backward compatibility).
