@@ -1,0 +1,17 @@
+{
+  "redis": {
+    "host": "r-6jissuruar.instance-69n0tflcd.hc-2uaqqpjgg.us-east-2.aws.f2e0a955bb84.cloud",
+    "port": 59333,
+    "username": "falkordb",
+    "password_env": "REDIS_PASSWORD",
+    "ssl": false
+  },
+  "scan": {
+    "count": 1000,
+    "match": "*"
+  },
+  "output": {
+    "format": "tsv",
+    "top_n": 200
+  }
+}
