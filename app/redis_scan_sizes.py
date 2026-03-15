@@ -57,7 +57,7 @@ while True:
             size_bytes = r.memory_usage(key) or 0
             size_kb = size_bytes / 1024
 
-        results.append((key, size_kb, key_type))
+        results.append((key, size_kb, key_type, key_type == "graphdata"))
     if cursor == 0:
         break
 
@@ -68,9 +68,13 @@ results = results[:TOP_N]
 # ---------------------------------------------------------------------------
 # Output (TSV)
 # ---------------------------------------------------------------------------
-print(f"\n{'KEY'}\t{'SIZE (KB)'}\t{'TYPE'}")
+print(f"\n{'KEY'}\t{'SIZE'}\t{'TYPE'}")
 print("-" * 60)
-for key, size_kb, key_type in results:
-    print(f"{key}\t{size_kb:.2f} KB\t{key_type}")
+for key, size_kb, key_type, is_graph in results:
+    if is_graph and size_kb >= 1024:
+        size_display = f"{size_kb / 1024:.2f} MB"
+    else:
+        size_display = f"{size_kb:.2f} KB"
+    print(f"{key}\t{size_display}\t{key_type}")
 
 print(f"\nTotal keys found: {len(results)} (capped at top {TOP_N} by size)")
