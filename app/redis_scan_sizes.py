@@ -3,19 +3,40 @@
 Scan all Redis keys and print each key with its memory usage.
 
 Usage:
-    REDIS_PASSWORD=secret python redis_scan_sizes.py
+    python3 redis_scan_sizes.py [--host HOST:PORT] [--password PASSWORD]
+
+Examples:
+    python3 redis_scan_sizes.py --password n28fyp9r
+    python3 redis_scan_sizes.py --host myhost.com:59333 --password n28fyp9r
+    REDIS_PASSWORD=secret python3 redis_scan_sizes.py
 """
 
+import argparse
 import os
 import redis
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-HOST     = "r-6jissuruar.instance-69n0tflcd.hc-2uaqqpjgg.us-east-2.aws.f2e0a955bb84.cloud"
-PORT     = 59333
-USERNAME = "falkordb"
-PASSWORD = os.environ.get("REDIS_PASSWORD", "")
+DEFAULT_HOST = "r-6jissuruar.instance-69n0tflcd.hc-2uaqqpjgg.us-east-2.aws.f2e0a955bb84.cloud"
+DEFAULT_PORT = 59333
+
+parser = argparse.ArgumentParser(description="Scan Redis keys and report sizes.")
+parser.add_argument("--host", default=None, help="host:port (default: built-in host:59333)")
+parser.add_argument("--password", default=os.environ.get("REDIS_PASSWORD", ""), help="Redis password")
+parser.add_argument("--username", default=os.environ.get("REDIS_USERNAME", "falkordb"), help="Redis username")
+args = parser.parse_args()
+
+if args.host:
+    _host, _, _port = args.host.partition(":")
+    HOST = _host
+    PORT = int(_port) if _port else 6379
+else:
+    HOST = DEFAULT_HOST
+    PORT = DEFAULT_PORT
+
+USERNAME = args.username
+PASSWORD = args.password
 SSL      = False
 
 SCAN_COUNT = 1000
@@ -39,6 +60,7 @@ r = redis.Redis(
 # ---------------------------------------------------------------------------
 print("Scanning keys...")
 results = []
+total_kb = 0
 
 cursor = 0
 while True:
@@ -57,6 +79,7 @@ while True:
             size_bytes = r.memory_usage(key) or 0
             size_kb = size_bytes / 1024
 
+        total_kb += size_kb
         results.append((key, size_kb, key_type, key_type == "graphdata"))
     if cursor == 0:
         break
@@ -77,4 +100,5 @@ for key, size_kb, key_type, is_graph in results:
         size_display = f"{size_kb:.2f} KB"
     print(f"{key}\t{size_display}\t{key_type}")
 
-print(f"\nTotal keys found: {len(results)} (capped at top {TOP_N} by size)")
+print(f"\nTotal keys shown: {len(results)} (capped at top {TOP_N} by size)")
+print(f"Total size (all keys): {total_kb / 1024:.2f} MB")
